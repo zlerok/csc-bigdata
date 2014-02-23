@@ -45,5 +45,5 @@ else:
 server_address = ('127.10.0.1', port)
 
 httpd = SocketServer.TCPServer(("", port), ReplicaHandler)
-print "Serving HTTP on port", port
+print "Replica serving HTTP on port", port
 httpd.serve_forever()
