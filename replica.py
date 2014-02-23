@@ -1,30 +1,26 @@
 import sys
-import BaseHTTPServer
 import SocketServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime
 
+TICKET = datetime(2005, 7, 14, 12, 30)
+MASTER_ADRESS = "127.10.0.1:8000"
 
-bilet = datetime(2005, 7, 14, 12, 30)   
-master_addres = "127.10.0.1:8000"
 class ReplicaHandler(SimpleHTTPRequestHandler):
-     
-    def __init__(self):
-        self.bilet = datetime(2005, 7, 14, 12, 30)   
-        self.master_addres = "127.10.0.1:8000"
-        super(ReplicaHandler, self).__init__(*args)
-        
+
     def do_GET(self):
         try:
+            global TICKET
             if self.path == "/write":
-                answer = "KO" if bilet < datetime.now() else "OK"
+                answer = "KO" if TICKET < datetime.now() else "OK"
                 
                 self.send_response(200)
                 self.send_header("Content-type", "text/html")
                 self.end_headers()
-                tmp = bilet.strftime("%d/%m/%y %H:%M")
-                self.wfile.write(answer + "   " + tmp) 
+                self.wfile.write(answer + 
+                                '<br />TICKET : ' + TICKET.strftime("%d/%m/%y %H:%M") + 
+                                '<br />now : ' + datetime.now().strftime("%d/%m/%y %H:%M")) 
+                #print 'GET : ' + TICKET.strftime("%d/%m/%y %H:%M")
             else:                 
                 SimpleHTTPRequestHandler.do_GET(self)
         except IOError:
@@ -32,14 +28,14 @@ class ReplicaHandler(SimpleHTTPRequestHandler):
      
     def do_POST(self):
         try:
-            #if self.path == "/take_new_bilet":
-            #s = self.rfile.read()    
-            content_len = int(self.headers.getheader('content-length'))
-            post_str = self.rfile.read(content_len)
-            bilet = datetime.strptime(post_str, "%d/%m/%y %H:%M")      
-            print bilet
+            global TICKET
+            if self.path == "/take_new_ticket":
+                content_len = int(self.headers.getheader('content-length'))
+                post_str = self.rfile.read(content_len)
+                TICKET = datetime.strptime(post_str, "%d/%m/%y %H:%M")      
+                #print 'POST : ' + TICKET.strftime("%d/%m/%y %H:%M")
         except Exception:
-            print "error"
+            self.send_error(404,"File Not Found: %s" % self.path)
 
 
 if sys.argv[1:]:
@@ -47,8 +43,7 @@ if sys.argv[1:]:
 else:
     port = 8001
 server_address = ('127.10.0.1', port)
-Handler = ReplicaHandler
 
-httpd = SocketServer.TCPServer(("", port), Handler)
-print "Serving HTTP on", "port", "..."
+httpd = SocketServer.TCPServer(("", port), ReplicaHandler)
+print "Serving HTTP on port", port
 httpd.serve_forever()
