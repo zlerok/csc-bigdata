@@ -29,7 +29,7 @@ class ReplicaHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         try:
             global TICKET
-            if self.path == "/take_new_ticket":
+            if self.path == "/set-new-ticket":
                 content_len = int(self.headers.getheader('content-length'))
                 post_str = self.rfile.read(content_len)
                 TICKET = datetime.strptime(post_str, "%d/%m/%y %H:%M")      

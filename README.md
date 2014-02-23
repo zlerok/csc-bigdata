@@ -7,7 +7,7 @@ Run :
 python replica.py [<port>]
 
 Set ticket request : 
-curl --data "<new-date>" http://127.10.0.1:8001/take_new_ticket
+curl --data "<new-date>" http://127.10.0.1:8001/set-new-ticket
 <new-date> : dd/mm/yy hh:mm 
 
 Check ticket request : 
