@@ -3,22 +3,24 @@ import SocketServer
 import urllib2
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from datetime import datetime
-#from time import time, sleep#gmtime, strftime
 import time
-
 import threading
 
-#MASTER_ADRESS = "127.10.0.1"
+
+if sys.argv[1:]:
+    port = int(sys.argv[1])
+else:
+    port = 8000
+    
+MASTER_ADRESS = "127.0.0.1" 
+
+server_adress =  (MASTER_ADRESS, port)
+MASTER_ADRESS = MASTER_ADRESS  + ':' + str(port)  
+
 REPLICS = ["127.0.0.1:8001", "127.0.0.1:8002", "127.0.0.1:8003"]
 MAIN_REPLICA = None
 
 class MasterHandler(SimpleHTTPRequestHandler):
-
- #   def __init__(self, *args):
- #       #Start some timer(handler = setMainReplica()) 
- #       #MasterHandler.setMainReplica()
- #       SimpleHTTPRequestHandler.__init__(self, *args)
-
     def do_GET(self):
         try:
             if self.path == "/get-write-replica":
@@ -36,16 +38,17 @@ class MasterHandler(SimpleHTTPRequestHandler):
     def getMainReplica():
         global MAIN_REPLICA
         return 'Not ready yet' if MAIN_REPLICA is None else MAIN_REPLICA
-        
-    @staticmethod                    
-    def setMainReplica():
+
+
+def setMainReplica():
         global REPLICS
-        global MAIN_REPLICA
+        global MAIN_REPLICA      
         #check current MAIN_REPLICA
         #return if answer
         if MAIN_REPLICA is not None:
             try:
                 req = urllib2.Request("http://" + MAIN_REPLICA + "/set-new-ticket")
+                req.add_header("referer", MASTER_ADRESS)
                 response = urllib2.urlopen(req)
                 if response.getcode() == 200:
                     return
@@ -57,6 +60,8 @@ class MasterHandler(SimpleHTTPRequestHandler):
         for replic_adress in REPLICS:
             try:
                 req = urllib2.Request("http://" + replic_adress + "/set-new-ticket")
+                req.add_header("referer", MASTER_ADRESS)
+                
                 response = urllib2.urlopen(req)
                 if response.getcode() == 200:
                     MAIN_REPLICA = replic_adress
@@ -65,22 +70,18 @@ class MasterHandler(SimpleHTTPRequestHandler):
                 pass
         MAIN_REPLICA = None
 
+
 def clock():
     while True:
-        MasterHandler.setMainReplica()
+        setMainReplica()
         time.sleep(50)
-    
-if sys.argv[1:]:
-    port = int(sys.argv[1])
-else:
-    port = 8000
-    
-server_address = ('127.0.0.1', port)
-httpd = SocketServer.TCPServer(("", port), MasterHandler)
+
+httpd = SocketServer.TCPServer(server_adress, MasterHandler)
 print "Master serving HTTP on port", port
 
 t = threading.Thread(target=clock)
 t.daemon = True
 t.start()
+setMainReplica()
 
 httpd.serve_forever()
