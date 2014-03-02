@@ -1,5 +1,5 @@
 import sys
-import SocketServer
+from SocketServer import TCPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from datetime import datetime, timedelta
 
@@ -54,6 +54,6 @@ class ReplicaHandler(SimpleHTTPRequestHandler):
      
 
 
-httpd = SocketServer.TCPServer(server_address, ReplicaHandler)
+httpd = TCPServer(server_address, ReplicaHandler)
 print "Replica serving HTTP on port", port
 httpd.serve_forever()

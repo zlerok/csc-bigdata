@@ -1,10 +1,10 @@
 import sys
-import SocketServer
+from SocketServer import TCPServer
 import urllib2
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from datetime import datetime
-import time
-import threading
+from time import sleep
+from threading import Thread
 
 
 if sys.argv[1:]:
@@ -74,12 +74,12 @@ def setMainReplica():
 def clock():
     while True:
         setMainReplica()
-        time.sleep(50)
+        sleep(50)
 
-httpd = SocketServer.TCPServer(server_adress, MasterHandler)
+httpd = TCPServer(server_adress, MasterHandler)
 print "Master serving HTTP on port", port
 
-t = threading.Thread(target=clock)
+t = Thread(target=clock)
 t.daemon = True
 t.start()
 setMainReplica()
